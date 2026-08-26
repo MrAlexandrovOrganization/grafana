@@ -1,0 +1,38 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate configs
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker-compose
+        run: |
+          export MONITORING_DATA_DIR=/tmp/monitoring
+          export GRAFANA_PASSWORD=dummy
+          export TELEGRAM_BOT_TOKEN=dummy
+          export TELEGRAM_CHAT_ID=dummy
+          docker compose config -q
+
+  deploy:
+    name: Deploy to VM
+    runs-on: ubuntu-24.04
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ${{ secrets.VM_PROJECT_PATH }}
+            git pull
+            make up

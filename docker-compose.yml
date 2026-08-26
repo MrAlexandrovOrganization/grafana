@@ -1,0 +1,37 @@
+networks:
+  monitoring-net:
+    external: true
+    name: monitoring-net
+
+services:
+  grafana:
+    image: grafana/grafana:12.0.0
+    restart: unless-stopped
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning:ro
+      - ${MONITORING_DATA_DIR}/grafana-dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_INSTALL_PLUGINS=marcusolsson-calendar-panel
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    networks:
+      - monitoring-net
+    extends:
+      file: docker-compose.base.yml
+      service: base
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 1.0g
+
+volumes:
+  grafana_data:
+    name: observability_grafana_data
