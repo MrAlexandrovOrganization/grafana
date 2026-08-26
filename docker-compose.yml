@@ -1,7 +1,13 @@
 networks:
-  monitoring-net:
+  prometheus-net:
     external: true
-    name: monitoring-net
+    name: prometheus-net
+  loki-net:
+    external: true
+    name: loki-net
+  jaeger-net:
+    external: true
+    name: jaeger-net
 
 services:
   grafana:
@@ -22,7 +28,9 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     networks:
-      - monitoring-net
+      - prometheus-net
+      - loki-net
+      - jaeger-net
     extends:
       file: docker-compose.base.yml
       service: base
