@@ -1,6 +1,6 @@
 DOCKER_COMPOSE = docker compose
 DOCKER ?= docker
-NETS = prometheus-net loki-net jaeger-net
+NETS = prometheus-net loki-net jaeger-net grafana-datasources-net
 
 TEMPLATE_VARS = $${TELEGRAM_BOT_TOKEN} $${TELEGRAM_CHAT_ID}
 
@@ -32,6 +32,8 @@ network:
 
 directories:
 	@mkdir -p $(MONITORING_DATA_DIR)/grafana-dashboards
+	@mkdir -p $(MONITORING_DATA_DIR)/grafana-datasources
+	@cp ./provisioning/datasources/*.yaml $(MONITORING_DATA_DIR)/grafana-datasources/
 
 down:
 	$(DOCKER_COMPOSE) down

@@ -8,9 +8,11 @@ networks:
   jaeger-net:
     external: true
     name: jaeger-net
-  location-db-net:
+  # Generic network that data sources (e.g. location's PostgreSQL) join so
+  # Grafana can reach them. Grafana stays unaware of any specific project.
+  grafana-datasources-net:
     external: true
-    name: location-db-net
+    name: grafana-datasources-net
 
 services:
   grafana:
@@ -18,6 +20,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./provisioning:/etc/grafana/provisioning:ro
+      - ${MONITORING_DATA_DIR}/grafana-datasources:/etc/grafana/provisioning/datasources:ro
       - ${MONITORING_DATA_DIR}/grafana-dashboards:/var/lib/grafana/dashboards
       - grafana_data:/var/lib/grafana
     ports:
@@ -34,7 +37,7 @@ services:
       - prometheus-net
       - loki-net
       - jaeger-net
-      - location-db-net
+      - grafana-datasources-net
     extends:
       file: docker-compose.base.yml
       service: base
