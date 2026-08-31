@@ -156,3 +156,58 @@ groups:
         labels:
           severity: critical
         isPaused: false
+
+  - orgId: 1
+    name: application-logs
+    folder: Infrastructure
+    interval: 1m
+    rules:
+      - uid: service-log-errors
+        title: ServiceLogErrors
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: loki
+            model:
+              datasource:
+                type: loki
+                uid: loki
+              editorMode: code
+              expr: >
+                sum by (compose_project, service_name) (
+                  count_over_time({job="docker", level="ERROR", service_name!=""}[5m])
+                )
+              intervalMs: 1000
+              maxDataPoints: 43200
+              queryType: range
+              refId: A
+          - refId: B
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              reducer: last
+              expression: A
+              datasource:
+                type: __expr__
+                uid: __expr__
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    params: [5]
+                    type: gt
+              datasource:
+                type: __expr__
+                uid: __expr__
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 2m
+        annotations:
