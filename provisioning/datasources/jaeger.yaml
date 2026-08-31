@@ -6,3 +6,12 @@ datasources:
     uid: jaeger
     url: http://jaeger:16686
     access: proxy
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: -5m
+        spanEndTimeShift: 5m
+        filterByTraceID: true
+        filterBySpanID: true
+        customQuery: true
+        query: '{job="docker"} | json | trace_id="$${__trace.traceId}"'
