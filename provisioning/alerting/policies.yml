@@ -1,8 +1,20 @@
 apiVersion: 1
 
+muteTimes:
+  - orgId: 1
+    name: notifications-disabled
+    time_intervals:
+      - times:
+          - start_time: "00:00"
+            end_time: "24:00"
+
 policies:
   - orgId: 1
-    receiver: Telegram
+    receiver: grafana-default-email
+    routes:
+      - receiver: grafana-default-email
+        mute_time_intervals:
+          - notifications-disabled
     group_by:
       - grafana_folder
       - alertname

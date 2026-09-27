@@ -1,28 +1,5 @@
 apiVersion: 1
 
-contactPoints:
-  - orgId: 1
-    name: Telegram
-    receivers:
-      - uid: telegram
-        type: telegram
-        settings:
-          bottoken: ${TELEGRAM_BOT_TOKEN}
-          chatid: "${TELEGRAM_CHAT_ID}"
-          parse_mode: HTML
-          message: |
-            {{ if eq .Status "firing" }}🔴 <b>FIRING</b>{{ else }}✅ <b>RESOLVED</b>{{ end }} ({{ .Alerts | len }})
-
-            {{ range .Alerts }}
-            <b>{{ .Labels.alertname }}</b> [{{ .Labels.severity }}]
-            {{ .Annotations.summary }}
-            {{ .Annotations.description }}
-
-            <code>Labels:</code>
-            {{ range $key, $value := .Labels }}<code>  {{ $key }}: {{ $value }}</code>
-            {{ end }}
-            {{ if .DashboardURL }}📊 <a href="{{ .DashboardURL }}">Dashboard</a>{{ end }}
-            {{ if .SilenceURL }}🔇 <a href="{{ .SilenceURL }}">Silence</a>{{ end }}
-            {{ if .StartsAt }}🕒 {{ .StartsAt.Format "15:04:05 02.01.2006" }}{{ end }}
-            {{ end }}
-        disableResolveMessage: false
+# Telegram provisioning is disabled: no bot token is required at startup.
+# Existing contact points in the database are retained but are not routed to.
+contactPoints: []
