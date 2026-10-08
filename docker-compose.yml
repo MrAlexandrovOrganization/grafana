@@ -19,7 +19,7 @@ networks:
 
 services:
   grafana:
-    image: grafana/grafana:12.0.0
+    image: grafana/grafana:${GRAFANA_VERSION:?Run via make}
     restart: unless-stopped
     volumes:
       - ./provisioning:/etc/grafana/provisioning:ro

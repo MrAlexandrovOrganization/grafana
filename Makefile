@@ -6,6 +6,7 @@ TEMPLATE_VARS = $${TELEGRAM_BOT_TOKEN} $${TELEGRAM_CHAT_ID}
 
 -include .env
 export
+include versions.mk
 
 render:
 	@find templates -name '*.tpl.yml' | while read tpl; do \
@@ -42,3 +43,9 @@ logs:
 	$(DOCKER_COMPOSE) logs -f
 
 .PHONY: render up down logs init network directories
+
+.PHONY: versions config-check
+versions:
+	@$(foreach v,$(VERSION_VARS),printf '%s=%s\n' '$(v)' '$($(v))';)
+config-check:
+	$(DOCKER_COMPOSE) --env-file /dev/null config --quiet --no-env-resolution

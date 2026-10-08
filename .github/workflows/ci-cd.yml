@@ -18,7 +18,7 @@ jobs:
           export GRAFANA_PASSWORD=dummy
           export TELEGRAM_BOT_TOKEN=dummy
           export TELEGRAM_CHAT_ID=dummy
-          docker compose config -q
+          make config-check
 
   deploy:
     name: Deploy to VM
