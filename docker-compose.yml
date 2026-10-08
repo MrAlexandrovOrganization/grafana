@@ -1,4 +1,7 @@
 networks:
+  caddy-grafana-net:
+    external: true
+    name: caddy-grafana-net
   prometheus-net:
     external: true
     name: prometheus-net
@@ -35,10 +38,12 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     networks:
-      - prometheus-net
-      - loki-net
-      - jaeger-net
-      - grafana-datasources-net
+      prometheus-net: {}
+      loki-net: {}
+      jaeger-net: {}
+      grafana-datasources-net: {}
+      caddy-grafana-net:
+        aliases: [grafana-ingress]
     extends:
       file: docker-compose.base.yml
       service: base
