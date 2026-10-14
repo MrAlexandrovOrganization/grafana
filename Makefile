@@ -1,12 +1,12 @@
 DOCKER_COMPOSE = docker compose
 DOCKER ?= docker
-NETS = prometheus-net loki-net jaeger-net grafana-datasources-net
+NETS = prometheus-net loki-net jaeger-net grafana-datasources-net caddy-grafana-net
 
 TEMPLATE_VARS = $${TELEGRAM_BOT_TOKEN} $${TELEGRAM_CHAT_ID}
 
 -include .env
 export
-include versions.mk
+include makefiles/versions.mk
 
 render:
 	@find templates -name '*.tpl.yml' | while read tpl; do \

@@ -1,6 +1,6 @@
 # Grafana
 
-Версия образа задаётся в `versions.mk`; `make versions` показывает её.
+Версия образа задаётся в `makefiles/versions.mk`; `make versions` показывает её.
 Make экспортирует значение в Compose. CI вызывает `make config-check`.
 
 - `make config-check` — валидация Compose; задайте тестовый `MONITORING_DATA_DIR`.
@@ -35,3 +35,16 @@ Telegram-уведомления отключены. Шаблон контакт�
 HTTP 200 на `/login` через loopback и VPN, применение политики и mute в БД,
 отсутствие новых рестартов в период проверки. Дашборды и источники данных
 отдельно не проверялись. Конфигурация применена вручную на VM и сохранена локально.
+
+## Центральный экземпляр на WSL
+
+При переносе сохраняются named volume с БД Grafana, вся `.monitoring` с
+provisioning/dashboards и приватный `.env`. Уведомления остаются отключёнными.
+Источники Prometheus/Loki используют локальные Docker aliases; `JAEGER_URL`
+указывает на прежний Jaeger через tailnet. Дополнительные SQL datasources также
+должны использовать tailnet endpoint вместо Docker DNS другой машины.
+
+До проверки нового экземпляра старые volumes не удаляются. SSH deployment
+по прежним VM secrets теперь opt-in через repository variable `DEPLOY_ENABLED`;
+не включать его до настройки доставки на WSL. Однократная миграция выполняется
+из проверенной Git-ревизии явными Make-командами после CI.
