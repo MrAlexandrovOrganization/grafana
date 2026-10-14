@@ -18,26 +18,23 @@ networks:
     name: grafana-datasources-net
 
 services:
-  grafana:
-    image: grafana/grafana:${GRAFANA_VERSION:?Run via make}
+  grafana-tailnet:
+    image: tailscale/tailscale:${TAILSCALE_VERSION:?Run via make}
     restart: unless-stopped
+    environment:
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "false"
+      TS_AUTH_ONCE: "true"
+      TS_EXTRA_ARGS: --login-server=${HEADSCALE_URL:?Set Headscale URL} --hostname=wsl-grafana --accept-dns=false --accept-routes=false
     volumes:
-      - ./provisioning:/etc/grafana/provisioning:ro
-      - ${MONITORING_DATA_DIR}/grafana-datasources:/etc/grafana/provisioning/datasources:ro
-      - ${MONITORING_DATA_DIR}/grafana-dashboards:/var/lib/grafana/dashboards
-      - grafana_data:/var/lib/grafana
+      - grafana_tailnet:/var/lib/tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
     ports:
       - "127.0.0.1:3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-      - GF_AUTH_ANONYMOUS_ENABLED=false
-      - GF_ANALYTICS_REPORTING_ENABLED=false
-      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
-      - GF_LOG_FILTERS=tsdb.loki:warn
-      - GF_INSTALL_PLUGINS=marcusolsson-calendar-panel
-      - JAEGER_URL=${JAEGER_URL:-http://100.64.0.1:16686}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     networks:
       prometheus-net: {}
       loki-net: {}
@@ -51,9 +48,41 @@ services:
     deploy:
       resources:
         limits:
+          cpus: "0.2"
+          memory: 256m
+
+  grafana:
+    image: grafana/grafana:${GRAFANA_VERSION:?Run via make}
+    restart: unless-stopped
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning:ro
+      - ${MONITORING_DATA_DIR}/grafana-datasources:/etc/grafana/provisioning/datasources:ro
+      - ${MONITORING_DATA_DIR}/grafana-dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    network_mode: service:grafana-tailnet
+    depends_on:
+      - grafana-tailnet
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+      - GF_LOG_FILTERS=tsdb.loki:warn
+      - GF_INSTALL_PLUGINS=marcusolsson-calendar-panel
+      - JAEGER_URL=${JAEGER_URL:-http://100.64.0.1:16686}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+    extends:
+      file: docker-compose.base.yml
+      service: base
+    deploy:
+      resources:
+        limits:
           cpus: "0.5"
           memory: 1.0g
 
 volumes:
+  grafana_tailnet:
+    name: observability_grafana_tailnet
   grafana_data:
     name: observability_grafana_data

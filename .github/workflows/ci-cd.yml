@@ -16,6 +16,7 @@ jobs:
         run: |
           export MONITORING_DATA_DIR=/tmp/monitoring
           export GRAFANA_PASSWORD=dummy
+          export HEADSCALE_URL=https://headscale.example.com
           export TELEGRAM_BOT_TOKEN=dummy
           export TELEGRAM_CHAT_ID=dummy
           make config-check
