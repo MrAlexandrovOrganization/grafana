@@ -23,6 +23,8 @@ Prometheus и Loki хранят 15 дней. WAL метрик Alloy хранит
 отказы дольше суток не покрываются. **Alloy 1.20.1 не прошёл тест досылки старых
 samples после собственного перезапуска**: WAL не даёт такой гарантии.
 При недоступности WSL следует сохранять работающие collectors.
+Проверено на Russia: отключение сетей только контейнера Alloy на 45 секунд,
+затем восстановление связи. Накопленный sample дошёл с исходной timestamp.
 Для гарантии после перезапуска нужен отдельный выбор устойчивого агента/очереди.
 
 Позиции Docker-логов и WAL находятся в `observability_alloy_data`, storage path
@@ -44,6 +46,11 @@ routes/DNS. Состояние — `observability_grafana_tailnet`. Однора
 регистрации удалён после использования. На server Tailscale Serve предоставляет
 Grafana доступ к Jaeger `:16686` и SQL datasources `:15434`/`:15432`.
 Сетевые маршруты Hostkey Finland относятся к отдельной настройке VPN.
+
+Alloy WSL использует `cgroup: host`, `ALLOY_PROCFS_PATH=/proc` и
+`ALLOY_DOCKER_DESKTOP=true`. Startup wrapper находит текущий dockerd по его
+Desktop PID file и подключает metadata image store на чтение внутри namespace
+сборщика. Хостовые mounts и Docker daemon не меняются; PID не закреплён.
 
 Grafana перенесена целиком: БД, 18 записей dashboard/folder, 6 datasources,
 пользователь, 4 alert rules, provisioning и dashboards из `.monitoring`.
