@@ -49,8 +49,10 @@ Grafana доступ к Jaeger `:16686` и SQL datasources `:15434`/`:15432`.
 
 Alloy WSL использует `cgroup: host`, `ALLOY_PROCFS_PATH=/proc` и
 `ALLOY_DOCKER_DESKTOP=true`. Startup wrapper находит текущий dockerd по его
-Desktop PID file и подключает metadata image store на чтение внутри namespace
-сборщика. Хостовые mounts и Docker daemon не меняются; PID не закреплён.
+Desktop PID file, отсоединяет только собственные Ubuntu bind mounts и читает
+runtime root/image store через `/proc/PID/root`. Хостовые файлы, mounts и Docker
+daemon не меняются; PID не закреплён. Это уже привилегированный collector,
+procfs-ссылки не являются ограничением прав записи к runtime filesystem.
 
 Grafana перенесена целиком: БД, 18 записей dashboard/folder, 6 datasources,
 пользователь, 4 alert rules, provisioning и dashboards из `.monitoring`.
