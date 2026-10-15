@@ -73,10 +73,11 @@ datasources; существующий Elasticsearch datasource не провер
 также сохранено в `/home/maxim/.local/state/alloy-migration/legacy-state-kaz6iimo.tar`.
 Архивы содержат приватные данные; не публиковать их и не добавлять в Git.
 
-Автодеплой Alloy/Prometheus/Loki/Grafana отключён переменной репозитория
-`DEPLOY_ENABLED=false`: старые VM secrets указывают на прежнее размещение.
-CI выполняет проверки; миграция применяет проверенные Git-ревизии через Make
-на соответствующем хосте. Не включать CD до настройки правильной доставки.
+После завершения миграции настроен SSH CD через Hostkey Russia: центральные
+сервисы доставляются только на WSL, Alloy — на все пять хостов. `DEPLOY_ENABLED`
+управляет включением; старые VM secrets больше не используются. Применяется
+проверенный SHA, результат подтверждается runtime-проверкой и receipt.
+Подробности: [DEPLOY.md Alloy](https://github.com/MrAlexandrovOrganization/alloy/blob/main/DEPLOY.md).
 На Hostkey запускать `sudo -n make up`: sudo перед docker отдельно теряет
 экспортированные Make переменные версий. На server/WSL sudo для Docker не нужен.
 

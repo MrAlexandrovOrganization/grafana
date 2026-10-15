@@ -49,3 +49,8 @@ versions:
 	@$(foreach v,$(VERSION_VARS),printf '%s=%s\n' '$(v)' '$($(v))';)
 config-check:
 	$(DOCKER_COMPOSE) --env-file /dev/null config --quiet --no-env-resolution
+
+include makefiles/ci-deploy.mk
+
+.PHONY: check
+check: config-check test

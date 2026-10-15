@@ -47,10 +47,7 @@ provisioning/dashboards и приватный `.env`. Уведомления о�
 указывает на прежний Jaeger через tailnet. Дополнительные SQL datasources также
 должны использовать tailnet endpoint вместо Docker DNS другой машины.
 
-До проверки нового экземпляра старые volumes не удаляются. SSH deployment
-по прежним VM secrets теперь opt-in через repository variable `DEPLOY_ENABLED`;
-не включать его до настройки доставки на WSL. Однократная миграция выполняется
-из проверенной Git-ревизии явными Make-командами после CI.
+До проверки нового экземпляра старые volumes не удаляются.
 
 Docker Desktop не использует маршруты Headscale внутри Ubuntu. Поэтому Grafana
 разделяет network namespace с `grafana-tailnet`, отдельным Tailscale-клиентом
@@ -60,3 +57,17 @@ Docker Desktop не использует маршруты Headscale внутри
 файл удаляется, последующие старты используют сохранённое состояние.
 Клиент не принимает DNS, subnet routes или exit node и меняет маршруты только
 в своём namespace. Grafana по-прежнему публикуется лишь на loopback:3000.
+
+## Автодеплой
+
+После проверок push в `main` доставляет точный проверенный SHA на WSL через
+SSH jump host Hostkey Russia. `make ci-deploy` запускает транспорт; `make deploy`
+пересоздаёт сервис и выполняет `make smoke`. PR только проверяются. Ручной запуск
+workflow доступен для main. `DEPLOY_ENABLED` управляет включением доставки.
+Ключ репозитория ограничен этим проектом; `DEPLOY_SSH_KEY` хранится в Secrets,
+проверенные SSH host keys — в переменной `DEPLOY_KNOWN_HOSTS`. Старые `VM_*`
+secrets не используются. `.env` и named volumes остаются на хосте.
+
+Доступ/установка receiver, блокировки, отказы и повторный запуск описаны в
+[инструкции доставки Alloy](https://github.com/MrAlexandrovOrganization/alloy/blob/main/DEPLOY.md).
+Для тестов использовать `make test`; `make check` также валидирует конфигурацию.
