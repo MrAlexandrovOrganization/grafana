@@ -33,6 +33,12 @@ services:
     cap_add:
       - NET_ADMIN
       - NET_RAW
+    healthcheck:
+      test: ["CMD-SHELL", "tailscale status --json | grep -q '\"BackendState\": \"Running\"'"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     ports:
       - "127.0.0.1:3000:3000"
     networks:
@@ -61,7 +67,9 @@ services:
       - grafana_data:/var/lib/grafana
     network_mode: service:grafana-tailnet
     depends_on:
-      - grafana-tailnet
+      grafana-tailnet:
+        condition: service_healthy
+        restart: true
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_AUTH_ANONYMOUS_ENABLED=false
