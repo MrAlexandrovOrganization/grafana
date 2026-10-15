@@ -38,6 +38,9 @@ HTTP 200 на `/login` через loopback и VPN, применение поли
 
 ## Центральный экземпляр на WSL
 
+Фактическое размещение, сохранённые данные, ограничения WAL и откат описаны
+в [MIGRATION.md](MIGRATION.md).
+
 При переносе сохраняются named volume с БД Grafana, вся `.monitoring` с
 provisioning/dashboards и приватный `.env`. Уведомления остаются отключёнными.
 Источники Prometheus/Loki используют локальные Docker aliases; `JAEGER_URL`
