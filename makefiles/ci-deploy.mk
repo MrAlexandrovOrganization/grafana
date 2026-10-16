@@ -13,4 +13,4 @@ test:
 	python3 -m unittest discover -s tests -v
 
 recreate: render init
-	$(DOCKER_COMPOSE) up -d --force-recreate grafana
+	$(DOCKER_COMPOSE) up -d --force-recreate grafana-tailnet grafana

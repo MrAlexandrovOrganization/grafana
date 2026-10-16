@@ -78,3 +78,7 @@ Compose uses explicit service names without replica numbers. Set
 `CONTAINER_NAME_PREFIX` (for example `dev-`) for an additional local or CI stack
 on the same Docker host. Keep Compose project/service labels and volume names
 unchanged; clients address services or explicit network aliases.
+
+`make recreate` recreates Grafana and its tailnet sidecar together, retaining
+their existing volumes. This also refreshes Docker namespace references after
+a container rename.
