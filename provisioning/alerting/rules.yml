@@ -20,9 +20,9 @@ groups:
                 type: prometheus
                 uid: prometheus
               expr: >
-                (container_memory_working_set_bytes{name!="",name!="transcriber-whisper-worker-1"}
-                / container_spec_memory_limit_bytes{name!="",name!="transcriber-whisper-worker-1"})
-                and container_spec_memory_limit_bytes{name!="",name!="transcriber-whisper-worker-1"} > 0
+                (container_memory_working_set_bytes{name!="",service!="transcriber/whisper-worker"}
+                / container_spec_memory_limit_bytes{name!="",service!="transcriber/whisper-worker"})
+                and container_spec_memory_limit_bytes{name!="",service!="transcriber/whisper-worker"} > 0
               instant: true
               refId: A
           - refId: B
@@ -56,7 +56,7 @@ groups:
           description: 'Контейнер {{ or $labels.name "?" }} использует {{ with $values.B }}{{ humanizePercentage .Value }}{{ else }}неизвестное{{ end }} памяти. Порог: 80%.'
         labels:
           severity: warning
-        isPaused: false
+        isPaused: true
 
       - uid: container-memory-critical
         title: ContainerMemoryCritical
@@ -72,9 +72,9 @@ groups:
                 type: prometheus
                 uid: prometheus
               expr: >
-                (container_memory_working_set_bytes{name!="",name!="transcriber-whisper-worker-1"}
-                / container_spec_memory_limit_bytes{name!="",name!="transcriber-whisper-worker-1"})
-                and container_spec_memory_limit_bytes{name!="",name!="transcriber-whisper-worker-1"} > 0
+                (container_memory_working_set_bytes{name!="",service!="transcriber/whisper-worker"}
+                / container_spec_memory_limit_bytes{name!="",service!="transcriber/whisper-worker"})
+                and container_spec_memory_limit_bytes{name!="",service!="transcriber/whisper-worker"} > 0
               instant: true
               refId: A
           - refId: B
@@ -108,7 +108,7 @@ groups:
           description: 'Контейнер {{ or $labels.name "?" }} критически перегружен — {{ with $values.B }}{{ humanizePercentage .Value }}{{ else }}неизвестное{{ end }} памяти. Риск OOM-килла.'
         labels:
           severity: critical
-        isPaused: false
+        isPaused: true
 
       - uid: container-oom
         title: ContainerOOMKilled
@@ -124,7 +124,7 @@ groups:
                 type: prometheus
                 uid: prometheus
               expr: >
-                increase(container_oom_events_total{name!="",name!="transcriber-whisper-worker-1"}[5m])
+                increase(container_oom_events_total{name!="",service!="transcriber/whisper-worker"}[5m])
               instant: true
               refId: A
           - refId: B
@@ -158,7 +158,7 @@ groups:
           description: 'Контейнер {{ or $labels.name "?" }} был завершён из-за нехватки памяти (OOM). Проверьте лимиты и потребление.'
         labels:
           severity: critical
-        isPaused: false
+        isPaused: true
 
   - orgId: 1
     name: application-logs
@@ -180,8 +180,8 @@ groups:
                 uid: loki
               editorMode: code
               expr: >
-                sum by (compose_project, service_name) (
-                  count_over_time({job="docker", level="ERROR", service_name!=""}[5m])
+                sum by (host, service) (
+                  count_over_time({job="docker", level="error", service!=""}[5m])
                 )
               intervalMs: 1000
               maxDataPoints: 43200
@@ -214,8 +214,8 @@ groups:
         execErrState: Error
         for: 2m
         annotations:
-          summary: 'Ошибки в логах: {{ $labels.service_name }} (проект {{ $labels.compose_project }})'
-          description: '{{ $values.B }} ошибок ERROR за 5 минут в сервисе {{ $labels.service_name }} (проект {{ $labels.compose_project }})'
+          summary: 'Ошибки в логах: {{ $labels.service }} (хост {{ $labels.host }})'
+          description: '{{ $values.B }} ошибок ERROR за 5 минут в сервисе {{ $labels.service }} (хост {{ $labels.host }})'
         labels:
           severity: critical
-        isPaused: false
+        isPaused: true

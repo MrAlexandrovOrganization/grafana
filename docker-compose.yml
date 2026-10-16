@@ -19,6 +19,7 @@ networks:
 
 services:
   grafana-tailnet:
+    container_name: "${CONTAINER_NAME_PREFIX:-}grafana-tailnet"
     image: tailscale/tailscale:${TAILSCALE_VERSION:?Run via make}
     restart: unless-stopped
     environment:
@@ -58,6 +59,7 @@ services:
           memory: 256m
 
   grafana:
+    container_name: "${CONTAINER_NAME_PREFIX:-}grafana"
     image: grafana/grafana:${GRAFANA_VERSION:?Run via make}
     restart: unless-stopped
     volumes:
