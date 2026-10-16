@@ -20,7 +20,10 @@ render:
 up: render init
 	$(DOCKER_COMPOSE) up -d
 
-init: network directories
+init: network directories config-permissions
+
+config-permissions:
+	chmod a+r provisioning/alerting/rules.yml
 
 network:
 	@for n in $(NETS); do \
@@ -42,7 +45,7 @@ down:
 logs:
 	$(DOCKER_COMPOSE) logs -f
 
-.PHONY: render up down logs init network directories
+.PHONY: render up down logs init network directories config-permissions
 
 .PHONY: versions config-check
 versions:
