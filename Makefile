@@ -40,6 +40,7 @@ directories:
 	@mkdir -p $(MONITORING_DATA_DIR)/grafana-dashboards
 	@mkdir -p $(MONITORING_DATA_DIR)/grafana-datasources
 	@cp ./provisioning/datasources/*.yaml $(MONITORING_DATA_DIR)/grafana-datasources/
+	@cp ./dashboards/*.json "$(MONITORING_DATA_DIR)/grafana-dashboards/"
 
 down:
 	$(DOCKER_COMPOSE) down
