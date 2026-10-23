@@ -40,9 +40,9 @@
           "type": "prometheus",
           "uid": "prometheus"
         },
-        "definition": "label_values(vpn_config_info{kind=~\"$kind\"}, config_name)",
+        "definition": "query_result(label_join(vpn_config_info{kind=~\"$kind\"}, \"config_display\", \" · \", \"config_name\", \"config_id\"))",
         "query": {
-          "query": "label_values(vpn_config_info{kind=~\"$kind\"}, config_name)",
+          "query": "query_result(label_join(vpn_config_info{kind=~\"$kind\"}, \"config_display\", \" · \", \"config_name\", \"config_id\"))",
           "refId": "configs"
         },
         "refresh": 2,
@@ -53,7 +53,8 @@
           "text": "All",
           "value": "$__all"
         },
-        "sort": 1
+        "sort": 1,
+        "regex": "/config_display=\"(?<text>(?:\\\\.|[^\"\\\\])*)\"|config_id=\"(?<value>[^\"]+)\"/g"
       }
     ]
   },
@@ -75,7 +76,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (kind) (vpn_config_traffic_bytes_total{kind=~\"$kind\"} * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_name=~\"$config\"})",
+          "expr": "sum by (kind) (vpn_config_traffic_bytes_total{kind=~\"$kind\"} * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_id=~\"$config\"})",
           "legendFormat": "{{kind}}",
           "instant": true,
           "range": false,
@@ -130,7 +131,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (kind) (rate(vpn_config_traffic_bytes_total{kind=~\"$kind\"}[$__rate_interval]) * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_name=~\"$config\"}) * 8",
+          "expr": "sum by (kind) (rate(vpn_config_traffic_bytes_total{kind=~\"$kind\"}[$__rate_interval]) * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_id=~\"$config\"}) * 8",
           "legendFormat": "{{kind}}",
           "instant": true,
           "range": false,
@@ -185,7 +186,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (kind) (increase(vpn_config_traffic_bytes_total{kind=~\"$kind\"}[$__range]) * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_name=~\"$config\"})",
+          "expr": "sum by (kind) (increase(vpn_config_traffic_bytes_total{kind=~\"$kind\"}[$__range]) * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_id=~\"$config\"})",
           "legendFormat": "{{kind}}",
           "instant": true,
           "range": false,
@@ -240,8 +241,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (config_id, config_name, kind, direction) (rate(vpn_config_traffic_bytes_total{kind=~\"$kind\"}[$__rate_interval]) * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_name=~\"$config\"}) * 8",
-          "legendFormat": "{{config_name}} · {{direction}}",
+          "expr": "sum by (config_id, config_name, kind, direction) (rate(vpn_config_traffic_bytes_total{kind=~\"$kind\"}[$__rate_interval]) * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_id=~\"$config\"}) * 8",
+          "legendFormat": "{{config_name}} · {{config_id}} · {{direction}}",
           "instant": false,
           "range": true,
           "format": "time_series"
@@ -295,7 +296,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (config_id, config_name, kind) (vpn_config_traffic_bytes_total{kind=~\"$kind\"} * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_name=~\"$config\"})",
+          "expr": "sum by (config_id, config_name, kind) (vpn_config_traffic_bytes_total{kind=~\"$kind\"} * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_id=~\"$config\"})",
           "legendFormat": "{{config_name}} · {{direction}}",
           "instant": true,
           "range": false,
@@ -346,7 +347,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (config_id, config_name, kind) (increase(vpn_config_traffic_bytes_total{kind=~\"$kind\"}[$__range]) * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_name=~\"$config\"})",
+          "expr": "sum by (config_id, config_name, kind) (increase(vpn_config_traffic_bytes_total{kind=~\"$kind\"}[$__range]) * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_id=~\"$config\"})",
           "legendFormat": "{{config_name}} · {{direction}}",
           "instant": true,
           "range": false,
@@ -397,7 +398,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (kind, direction) (increase(vpn_config_traffic_bytes_total{kind=~\"$kind\"}[$__range]) * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_name=~\"$config\"})",
+          "expr": "sum by (kind, direction) (increase(vpn_config_traffic_bytes_total{kind=~\"$kind\"}[$__range]) * on (host, instance, config_id, kind) group_left(config_name) vpn_config_info{kind=~\"$kind\",config_id=~\"$config\"})",
           "legendFormat": "{{kind}} · {{direction}}",
           "instant": true,
           "range": false,
@@ -580,7 +581,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (kind) (vpn_config_info{kind=~\"$kind\",config_name=~\"$config\",active=\"true\"})",
+          "expr": "sum by (kind) (vpn_config_info{kind=~\"$kind\",config_id=~\"$config\",active=\"true\"})",
           "legendFormat": "{{kind}}",
           "instant": true,
           "range": false,
