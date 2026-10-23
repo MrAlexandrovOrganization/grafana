@@ -103,6 +103,9 @@ a container rename.
 `MONITORING_DATA_DIR/grafana-dashboards`, не удаляя дашборды других проектов;
 provisioning подхватывает файл в течение 30 секунд. Prometheus datasource UID —
 `prometheus`, дополнительных плагинов нет.
+Установка явно задаёт каталогу 0755 и JSON-файлам 0644: закрытый deploy umask
+не должен запрещать чтение Grafana (отдельный UID). Проверка `make test` покрывает
+первую установку и исправление ранее созданного файла с 0600 при umask 077.
 
 Источник — managed backend `infra/network/vless-relay` на Russia, который хранит
 VPN и proxy totals в bbolt и экспортирует их через локальный Alloy. Сначала нужно

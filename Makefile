@@ -37,10 +37,10 @@ network:
 	done
 
 directories:
-	@mkdir -p $(MONITORING_DATA_DIR)/grafana-dashboards
+	@install -d -m 0755 "$(MONITORING_DATA_DIR)/grafana-dashboards"
 	@mkdir -p $(MONITORING_DATA_DIR)/grafana-datasources
 	@cp ./provisioning/datasources/*.yaml $(MONITORING_DATA_DIR)/grafana-datasources/
-	@cp ./dashboards/*.json "$(MONITORING_DATA_DIR)/grafana-dashboards/"
+	@install -m 0644 ./dashboards/*.json "$(MONITORING_DATA_DIR)/grafana-dashboards/"
 
 down:
 	$(DOCKER_COMPOSE) down
