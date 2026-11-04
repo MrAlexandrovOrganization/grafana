@@ -447,7 +447,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Каждый сетевой интерфейс показан отдельно. Туннельные и внутренние участки могут переносить один трафик; их сумма завышает пользовательский расход.",
+      "description": "Каждый сетевой интерфейс показан отдельно. Туннельные и внутренние участки могут переносить один трафик; их сумма завышает пользовательский расход. Caddy edge также обслуживает другие HTTPS-сервисы; его трафик относится ко всему общему входу.",
       "fieldConfig": {
         "defaults": {
           "unit": "bps",
@@ -508,7 +508,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "",
+      "description": " Caddy edge также обслуживает другие HTTPS-сервисы; его трафик относится ко всему общему входу.",
       "fieldConfig": {
         "defaults": {
           "unit": "bps",
@@ -659,11 +659,35 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "label_replace(increase(container_network_receive_bytes_total{host=~\"$host\",name!=\"\",service=~\"$service\",service=~\"vless-relay/(entry|edge|bridge)|vless-server/xray\",interface!=\"lo\"}[$__range]), \"direction\", \"RX\", \"__name__\", \".*\") or label_replace(increase(container_network_transmit_bytes_total{host=~\"$host\",name!=\"\",service=~\"$service\",service=~\"vless-relay/(entry|edge|bridge)|vless-server/xray\",interface!=\"lo\"}[$__range]), \"direction\", \"TX\", \"__name__\", \".*\")",
+          "expr": "sum by(host, service, interface, direction) (label_replace(increase(container_network_receive_bytes_total{host=~\"$host\",name!=\"\",service=~\"$service\",service=~\"vless-relay/(entry|edge|bridge)|vless-server/xray\",interface!=\"lo\"}[$__range]), \"direction\", \"RX\", \"__name__\", \".*\") or label_replace(increase(container_network_transmit_bytes_total{host=~\"$host\",name!=\"\",service=~\"$service\",service=~\"vless-relay/(entry|edge|bridge)|vless-server/xray\",interface!=\"lo\"}[$__range]), \"direction\", \"TX\", \"__name__\", \".*\"))",
           "legendFormat": "{{host}}",
           "instant": true,
           "range": false,
           "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "host": 0,
+              "service": 1,
+              "interface": 2,
+              "direction": 3,
+              "Value": 4
+            },
+            "renameByName": {
+              "host": "Хост",
+              "service": "Компонент",
+              "interface": "Интерфейс",
+              "direction": "Направление",
+              "Value": "Объём"
+            }
+          }
         }
       ]
     },
