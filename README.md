@@ -98,6 +98,27 @@ a container rename.
 
 ## VPN и Telegram-прокси
 
+`dashboards/vpn-diagnostics.json`, UID `vpn-diagnostics`, — отдельная диагностика
+Russia / Finland. Он использует стандартные node_exporter/cAdvisor, существующий
+учёт vpn-manager и реальную VLESS/Reality-пробу watchdog. Архитектура и включение
+сетевых метрик — `infra/observability/alloy/VPN-MONITORING.md` в репозитории Alloy.
+Показаны скорость/объём, IPv4/IPv6 TCP-состояния, повторы и timeout, переполнение
+LISTEN, пакеты/ошибки/drops, conntrack, память сокетов, CPU/RAM/throttling и очередь
+доставки телеметрии. Host network series выбираются по `service=host-network`:
+они получены в настоящем host namespace, отдельно от встроенного unix exporter.
+
+Статус реальной пробы скрывается после 180 секунд без обновления. Проба идёт
+с Finland через публичную Russia и reverse обратно к финскому интернету;
+Wi-Fi телефона и прямой внешний маршрут к Finland она не воспроизводит.
+Container health и up endpoint показаны отдельно и не означают успех VPN.
+TCP connection series cAdvisor — gauges, хотя имена оканчиваются на `_total`.
+Host/container counters и интерфейсы не складываются: иначе трафик учитывается
+несколько раз. Ошибки/drops NIC не равны всем потерям на маршруте провайдера.
+Скорость — нагрузка, а не измеренная максимальная пропускная способность.
+Сохранённые managed totals показаны отдельно; legacy/direct профили могут в них
+не входить. История периода зависит от retention Prometheus (15 дней).
+Запросы проверяются на центральном Prometheus; установка — общий `make directories`.
+
 `dashboards/vpn-traffic.json` — дашборд «VPN и Telegram-прокси — трафик», UID
 `vpn-traffic`. `make init/up/recreate` копирует его в существующий каталог
 `MONITORING_DATA_DIR/grafana-dashboards`, не удаляя дашборды других проектов;
