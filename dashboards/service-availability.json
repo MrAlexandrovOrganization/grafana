@@ -1,0 +1,1489 @@
+{
+  "uid": "service-availability",
+  "title": "Сервисы · доступность",
+  "description": "Текущее состояние, история Docker healthcheck, доступность metrics endpoints и полнота наблюдений. По умолчанию production-хосты; пропуски телеметрии не считаются успехом. Не является end-to-end проверкой или SLA.",
+  "tags": [
+    "availability",
+    "services",
+    "infrastructure"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "30s",
+      "1m",
+      "5m",
+      "15m"
+    ]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "host",
+        "label": "Хост",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(up, host)",
+        "query": {
+          "query": "label_values(up, host)",
+          "refId": "host"
+        },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "sort": 1,
+        "current": {
+          "text": [
+            "hostkey-finland",
+            "hostkey-russia",
+            "wsl",
+            "asus-server"
+          ],
+          "value": [
+            "hostkey-finland",
+            "hostkey-russia",
+            "wsl",
+            "asus-server"
+          ]
+        },
+        "options": []
+      },
+      {
+        "name": "service",
+        "label": "Сервис",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values({__name__=~\"up|container_last_seen\",host=~\"$host\",service!=\"\"}, service)",
+        "query": {
+          "query": "label_values({__name__=~\"up|container_last_seen\",host=~\"$host\",service!=\"\"}, service)",
+          "refId": "service"
+        },
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "sort": 1,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Сервисы · доступность",
+      "type": "text",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 3
+      },
+      "description": "",
+      "options": {
+        "mode": "markdown",
+        "content": "**Finland → VPN → Notes → остальные сервисы.** Фильтр «Хост» по умолчанию выбирает Finland, Russia, WSL и ASUS.\n\n🟢 **Healthy** — Docker healthcheck успешен · 🔵 **Без healthcheck** — виден только контейнер · 🟠 **Unhealthy / запуск** · 🔴 **Не обнаружен** — сбор работает, контейнер не виден · ⚪ **Нет телеметрии** — свежесть > 90 с. Список включает Compose-сервисы, замеченные за последние **24 ч**; выключенные более суток исчезают. Это обзор healthcheck и метрик: успешный пользовательский сценарий бота или VPN им не проверяется."
+      }
+    },
+    {
+      "id": 2,
+      "title": "Наблюдались за 24 ч",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Число пар host/service за 24 часа, включая недавно остановленные. При нуле проверьте сбор и фильтры.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count((((((min by (host, service) ((clamp_min(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}, 0) + 2 * (container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} == bool -1)) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) or on (host, service) (-2 * (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0))) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0)) or on (host, service) (-1 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90))) or on (host, service) (-2 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h]))))) or vector(0)",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Unhealthy / не обнаружены",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Неуспешный/стартующий healthcheck либо отсутствие контейнера при работающем cAdvisor.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(((((((min by (host, service) ((clamp_min(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}, 0) + 2 * (container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} == bool -1)) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) or on (host, service) (-2 * (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0))) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0)) or on (host, service) (-1 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90))) or on (host, service) (-2 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) >= bool -1) * ((((((min by (host, service) ((clamp_min(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}, 0) + 2 * (container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} == bool -1)) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) or on (host, service) (-2 * (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0))) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0)) or on (host, service) (-1 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90))) or on (host, service) (-2 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) <= bool 0)) or vector(0)",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Без healthcheck",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      },
+      "description": "Контейнер наблюдается, но его готовность не проверяется Docker healthcheck.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum((((((min by (host, service) ((clamp_min(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}, 0) + 2 * (container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} == bool -1)) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) or on (host, service) (-2 * (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0))) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0)) or on (host, service) (-1 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90))) or on (host, service) (-2 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) == bool 2) or vector(0)",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Нет свежей телеметрии",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 3,
+        "w": 6,
+        "h": 4
+      },
+      "description": "cAdvisor не отвечает или samples старше 90 секунд. Это неизвестное состояние приложений.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum((((((min by (host, service) ((clamp_min(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}, 0) + 2 * (container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} == bool -1)) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) or on (host, service) (-2 * (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0))) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0)) or on (host, service) (-1 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90))) or on (host, service) (-2 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) == bool -2) or vector(0)",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Приоритетные сервисы · сейчас",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 24,
+        "h": 7
+      },
+      "description": "Registration, VPN/вход, Notes. Те же статусы, что в общем обзоре.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(((((min by (host, service) ((clamp_min(container_health_state{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}, 0) + 2 * (container_health_state{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} == bool -1)) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) or on (host, service) (-2 * (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0))) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0)) or on (host, service) (-1 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90))) or on (host, service) (-2 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h]))))",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "-2": {
+                  "text": "Нет телеметрии",
+                  "color": "#8e8e8e"
+                },
+                "-1": {
+                  "text": "Не обнаружен",
+                  "color": "red"
+                },
+                "0": {
+                  "text": "Unhealthy / запуск",
+                  "color": "orange"
+                },
+                "1": {
+                  "text": "Healthy",
+                  "color": "green"
+                },
+                "2": {
+                  "text": "Без healthcheck",
+                  "color": "blue"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 7,
+      "title": "Контейнеры · требуют внимания",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 9
+      },
+      "description": "Нормальное пустое состояние: проблем не обнаружено. «Нет телеметрии» не означает падение приложения.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(((((min by (host, service) ((clamp_min(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}, 0) + 2 * (container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} == bool -1)) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) or on (host, service) (-2 * (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0))) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0)) or on (host, service) (-1 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90))) or on (host, service) (-2 * max by (host, service) (present_over_time(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}[24h])))) <= 0",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "-2": {
+                  "text": "Нет телеметрии",
+                  "color": "#8e8e8e"
+                },
+                "-1": {
+                  "text": "Не обнаружен",
+                  "color": "red"
+                },
+                "0": {
+                  "text": "Unhealthy / запуск",
+                  "color": "orange"
+                },
+                "1": {
+                  "text": "Healthy",
+                  "color": "green"
+                },
+                "2": {
+                  "text": "Без healthcheck",
+                  "color": "blue"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Состояние"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true
+            },
+            "indexByName": {
+              "service": 0,
+              "host": 1,
+              "instance": 2,
+              "Value": 3
+            },
+            "renameByName": {
+              "host": "Хост",
+              "service": "Сервис",
+              "instance": "Endpoint",
+              "Value": "Состояние"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Сервис",
+            "desc": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "title": "Метрики · endpoints не отвечают",
+      "type": "table",
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 9
+      },
+      "description": "Проверяется /metrics. Отказ сбора не доказывает отказ API или бота. Пусто — нет известных проблем сбора.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(min by (host, service, instance) (up{job=~\"services|prometheus|loki\",host=~\"$host\",service=~\"$service\"} and (time() - timestamp(up{job=~\"services|prometheus|loki\",host=~\"$host\",service=~\"$service\"}) < 90)) or on (host, service, instance) (-1 * max by (host, service, instance) (present_over_time(up{job=~\"services|prometheus|loki\",host=~\"$host\",service=~\"$service\"}[24h])))) <= 0",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "-1": {
+                  "text": "Нет телеметрии",
+                  "color": "#8e8e8e"
+                },
+                "0": {
+                  "text": "Не отвечает",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Отвечает",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Состояние"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true
+            },
+            "indexByName": {
+              "service": 0,
+              "host": 1,
+              "instance": 2,
+              "Value": 3
+            },
+            "renameByName": {
+              "host": "Хост",
+              "service": "Сервис",
+              "instance": "Endpoint",
+              "Value": "Состояние"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Сервис",
+            "desc": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "title": "Приоритетные сервисы · история healthcheck",
+      "type": "state-timeline",
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 24,
+        "h": 11
+      },
+      "description": "Состояния на минутной сетке. Пропуски не соединяются: нет данных о состоянии. Очень короткие сбои между точками могут быть не видны.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(((min by (host, service) ((clamp_min(container_health_state{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}, 0) + 2 * (container_health_state{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} == bool -1)) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) or on (host, service) (-2 * (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0))) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",service=~\"registration/.*|registration-telegram/.*|registration-bot-api/.*|vless-server/.*|vless-relay/.*|caddy/.*|notes-bot/.*\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0)) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90)))",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "maxDataPoints": 720,
+      "interval": "1m",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 85,
+            "spanNulls": false,
+            "insertNulls": 90000
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "-2": {
+                  "text": "Нет телеметрии",
+                  "color": "#8e8e8e"
+                },
+                "-1": {
+                  "text": "Не обнаружен",
+                  "color": "red"
+                },
+                "0": {
+                  "text": "Unhealthy / запуск",
+                  "color": "orange"
+                },
+                "1": {
+                  "text": "Healthy",
+                  "color": "green"
+                },
+                "2": {
+                  "text": "Без healthcheck",
+                  "color": "blue"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "alignValue": "left",
+        "rowHeight": 0.8,
+        "pageSize": 25,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Все контейнеры · история healthcheck",
+      "type": "state-timeline",
+      "gridPos": {
+        "x": 0,
+        "y": 34,
+        "w": 24,
+        "h": 15
+      },
+      "description": "20 сервисов на странице. Healthy — только при healthcheck. Без healthcheck — отдельное состояние. Пропуски означают отсутствие наблюдения.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(((min by (host, service) ((clamp_min(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}, 0) + 2 * (container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} == bool -1)) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) or on (host, service) (-2 * (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0))) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0)) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90)))",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "maxDataPoints": 720,
+      "interval": "1m",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 85,
+            "spanNulls": false,
+            "insertNulls": 90000
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "-2": {
+                  "text": "Нет телеметрии",
+                  "color": "#8e8e8e"
+                },
+                "-1": {
+                  "text": "Не обнаружен",
+                  "color": "red"
+                },
+                "0": {
+                  "text": "Unhealthy / запуск",
+                  "color": "orange"
+                },
+                "1": {
+                  "text": "Healthy",
+                  "color": "green"
+                },
+                "2": {
+                  "text": "Без healthcheck",
+                  "color": "blue"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "alignValue": "left",
+        "rowHeight": 0.8,
+        "pageSize": 20,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Healthcheck · успешные наблюдения за период",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 49,
+        "w": 12,
+        "h": 11
+      },
+      "description": "Процент успешных минутных наблюдений только для контейнеров с healthcheck. Пропуски и время до появления контейнера исключены; это не SLA. Смотрите соседнее покрытие.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * avg_over_time((min by (host, service) ((container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} >= 0) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90)))[$__range:1m])",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Успешно, %"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true
+            },
+            "indexByName": {
+              "service": 0,
+              "host": 1,
+              "instance": 2,
+              "Value": 3
+            },
+            "renameByName": {
+              "host": "Хост",
+              "service": "Сервис",
+              "instance": "Endpoint",
+              "Value": "Успешно, %"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Сервис",
+            "desc": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "title": "Healthcheck · покрытие периода",
+      "type": "table",
+      "gridPos": {
+        "x": 12,
+        "y": 49,
+        "w": 12,
+        "h": 11
+      },
+      "description": "Доля минут периода, для которых есть свежий healthcheck и отвечает сборщик. Низкое покрытие делает высокий процент успешных наблюдений неполным.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * clamp_max(count_over_time((min by (host, service) ((container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} >= 0) and (time() - timestamp(container_health_state{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) and on (host, service) (max by (host, service) ((time() - container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"} < bool 90) and (time() - timestamp(container_last_seen{host=~\"$host\",service=~\"$service\",name!=\"\",service!=\"\",container_label_com_docker_compose_project!=\"\"}) < 90)) > 0) and on (host) max by (host) ((up{job=\"cadvisor\",host=~\"$host\"} == 1) and (time() - timestamp(up{job=\"cadvisor\",host=~\"$host\"}) < 90)))[$__range:1m]) / ($__range_s / 60 + 1), 1)",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Покрытие, %"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true
+            },
+            "indexByName": {
+              "service": 0,
+              "host": 1,
+              "instance": 2,
+              "Value": 3
+            },
+            "renameByName": {
+              "host": "Хост",
+              "service": "Сервис",
+              "instance": "Endpoint",
+              "Value": "Покрытие, %"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Сервис",
+            "desc": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "title": "Сбор метрик приложений · история",
+      "type": "state-timeline",
+      "gridPos": {
+        "x": 0,
+        "y": 60,
+        "w": 24,
+        "h": 10
+      },
+      "description": "UP относится к metrics endpoint. Серый промежуток — данных нет; он не превращается в успешный опрос.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "min by (host, service, instance) (up{job=~\"services|prometheus|loki\",host=~\"$host\",service=~\"$service\"} and (time() - timestamp(up{job=~\"services|prometheus|loki\",host=~\"$host\",service=~\"$service\"}) < 90))",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "maxDataPoints": 720,
+      "interval": "1m",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 85,
+            "spanNulls": false,
+            "insertNulls": 90000
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "-1": {
+                  "text": "Нет телеметрии",
+                  "color": "#8e8e8e"
+                },
+                "0": {
+                  "text": "Не отвечает",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Отвечает",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "alignValue": "left",
+        "rowHeight": 0.8,
+        "pageSize": 20,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Metrics endpoints · успешные опросы",
+      "type": "table",
+      "gridPos": {
+        "x": 0,
+        "y": 70,
+        "w": 12,
+        "h": 10
+      },
+      "description": "Доля успешных опросов /metrics среди полученных samples; пропуски не входят в знаменатель. Прочитайте покрытие в соседней таблице.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * avg_over_time(up{job=~\"services|prometheus|loki\",host=~\"$host\",service=~\"$service\"}[$__range])",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Успешно, %"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true
+            },
+            "indexByName": {
+              "service": 0,
+              "host": 1,
+              "instance": 2,
+              "Value": 3
+            },
+            "renameByName": {
+              "host": "Хост",
+              "service": "Сервис",
+              "instance": "Endpoint",
+              "Value": "Успешно, %"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Сервис",
+            "desc": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "title": "Metrics endpoints · покрытие периода",
+      "type": "table",
+      "gridPos": {
+        "x": 12,
+        "y": 70,
+        "w": 12,
+        "h": 10
+      },
+      "description": "Оценка полноты при настроенном интервале 15 с. Новые и удалённые targets имеют неполное покрытие. История ограничена retention Prometheus, сейчас 15 дней.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * clamp_max(count_over_time(up{job=~\"services|prometheus|loki\",host=~\"$host\",service=~\"$service\"}[$__range]) * 15 / $__range_s, 1)",
+          "legendFormat": "{{service}} · {{host}}",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Покрытие, %"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "percent"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true
+            },
+            "indexByName": {
+              "service": 0,
+              "host": 1,
+              "instance": 2,
+              "Value": 3
+            },
+            "renameByName": {
+              "host": "Хост",
+              "service": "Сервис",
+              "instance": "Endpoint",
+              "Value": "Покрытие, %"
+            }
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Сервис",
+            "desc": false
+          }
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "title": "Хосты · поступление системных метрик",
+      "type": "state-timeline",
+      "gridPos": {
+        "x": 0,
+        "y": 80,
+        "w": 16,
+        "h": 7
+      },
+      "description": "Успешный локальный node scrape и sample не старше 90 с. Наличие метрик не заменяет внешнюю сетевую проверку.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "max by(host) (up{job=\"node\",host=~\"$host\"} and (time() - timestamp(up{job=\"node\",host=~\"$host\"}) < 90))",
+          "legendFormat": "{{host}}",
+          "instant": false,
+          "range": true,
+          "format": "time_series"
+        }
+      ],
+      "maxDataPoints": 720,
+      "interval": "1m",
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 85,
+            "spanNulls": false,
+            "insertNulls": 90000
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "-1": {
+                  "text": "Нет телеметрии",
+                  "color": "#8e8e8e"
+                },
+                "0": {
+                  "text": "Не отвечает",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Отвечает",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "alignValue": "left",
+        "rowHeight": 0.8,
+        "pageSize": 10,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "title": "Хосты · сбор сейчас",
+      "type": "stat",
+      "gridPos": {
+        "x": 16,
+        "y": 80,
+        "w": 8,
+        "h": 7
+      },
+      "description": "Пропавший сбор хоста показывается серым в течение 24 часов.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(max by(host) (up{job=\"node\",host=~\"$host\"} and (time() - timestamp(up{job=\"node\",host=~\"$host\"}) < 90)) or on(host) (-1 * max by(host) (present_over_time(up{job=\"node\",host=~\"$host\"}[24h]))))",
+          "legendFormat": "{{host}}",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "decimals": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "-1": {
+                  "text": "Нет телеметрии",
+                  "color": "#8e8e8e"
+                },
+                "0": {
+                  "text": "Не отвечает",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "Отвечает",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
+    }
+  ],
+  "links": [
+    {
+      "title": "VPN · трафик",
+      "type": "link",
+      "url": "/d/vpn-traffic",
+      "keepTime": true
+    },
+    {
+      "title": "Notes · обзор",
+      "type": "link",
+      "url": "/d/notes-bot-overview",
+      "keepTime": true
+    },
+    {
+      "title": "Расшифровки · обзор",
+      "type": "link",
+      "url": "/d/transcriber-overview",
+      "keepTime": true
+    }
+  ]
+}
