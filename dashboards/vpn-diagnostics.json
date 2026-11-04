@@ -1227,7 +1227,7 @@
             "uid": "prometheus"
           },
           "refId": "A",
-          "expr": "100 * node_nf_conntrack_entries{host=~\"$host\",service=\"host-network\"} / node_nf_conntrack_entries_limit{host=~\"$host\",service=\"host-network\"}",
+          "expr": "100 * node_sysctl_net_netfilter_nf_conntrack_count{host=~\"$host\",service=\"host-network\"} / node_sysctl_net_netfilter_nf_conntrack_max{host=~\"$host\",service=\"host-network\"}",
           "legendFormat": "{{host}}",
           "instant": false,
           "range": true,
