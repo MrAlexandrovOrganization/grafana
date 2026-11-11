@@ -2,3 +2,5 @@
 provisioning/alerting/contact_points.yml
 
 __pycache__/
+
+.observability/

@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "service": "grafana",
+  "components": [
+    "grafana/*"
+  ],
+  "logs": [
+    {
+      "file": "monitoring/alloy/logs.alloy",
+      "phase": "parse",
+      "order": 150
+    }
+  ],
+  "assets": [
+    {
+      "kind": "dashboards",
+      "file": "dashboards/service-availability.json",
+      "destination": "service-availability.json",
+      "location": "central"
+    }
+  ]
+}
